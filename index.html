@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f1e7" />
+    <title>秘密抽屜</title>
+    <meta name="description" content="打開五層抽屜，抽出今天想收起來的那一幅小畫。三分鐘，沒有對錯。" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #f6f1e7;
+        --ink: #2a2420;
+        --muted: #8d7d72;
+        --blush: #e39aa4;
+        --white: #fbf8f3;
+        --case-blush: #f6d5de;
+        --peach: #f09a8c;
+        --sans: "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+        --serif: "Noto Serif TC", ui-serif, serif;
+      }
+      * { box-sizing: border-box; }
+      html { text-rendering: optimizeLegibility; }
+      body {
+        margin: 0;
+        background: color-mix(in srgb, var(--blush) 22%, var(--paper));
+        color: var(--ink);
+        font-family: var(--sans);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      button { font: inherit; color: inherit; cursor: pointer; }
+      button:disabled { cursor: default; }
+      ::selection { background: color-mix(in srgb, var(--blush) 70%, white); }
+      .shell {
+        margin: 0 auto;
+        display: flex;
+        height: 100dvh;
+        width: 100%;
+        max-width: 28rem;
+        flex-direction: column;
+        background: var(--paper);
+      }
+      main {
+        flex: 1;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 1.5rem 1.25rem 2rem;
+      }
+      footer {
+        flex-shrink: 0;
+        border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+        background: var(--paper);
+        padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+      }
+      .rise { animation: rise 280ms ease; }
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: none; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rise { animation: none; }
+      }
+      .center { text-align: center; }
+      .muted { color: var(--muted); }
+      .eyebrow { margin: 0; font-size: 0.875rem; }
+      h1 {
+        margin: 0.75rem 0 0;
+        font-family: var(--serif);
+        font-weight: 500;
+        line-height: 1.25;
+      }
+      .display { font-size: 3rem; text-align: center; }
+      .question { margin-top: 1.5rem; font-size: 1.875rem; }
+      .letter-name { margin-top: 0.75rem; font-size: 1.875rem; }
+      .style-name { margin-top: 1.25rem; font-size: 2.25rem; }
+      .lede {
+        margin: 1rem 0 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+      .hint { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--muted); }
+      .cover {
+        display: block;
+        width: 14rem;
+        aspect-ratio: 1;
+        margin: 1.5rem auto 0;
+        border-radius: 1.5rem;
+        object-fit: cover;
+      }
+      label.ask {
+        display: block;
+        margin-top: 2rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: var(--muted);
+      }
+      input.name {
+        display: block;
+        width: 100%;
+        margin-top: 0.5rem;
+        border: 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+        background: transparent;
+        padding: 0.75rem 0;
+        text-align: center;
+        font-family: var(--serif);
+        font-size: 1.5rem;
+        color: var(--ink);
+        outline: none;
+      }
+      input.name:focus { border-bottom-color: var(--ink); }
+      input.name::placeholder { color: color-mix(in srgb, var(--ink) 25%, transparent); }
+      .bars { display: flex; gap: 0.375rem; margin-top: 0.75rem; }
+      .bar { height: 0.25rem; flex: 1; border-radius: 999px; background: color-mix(in srgb, var(--ink) 15%, transparent); }
+      .bar.done { background: var(--ink); }
+      .bar.now { background: var(--blush); }
+      .stack { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1.5rem; }
+      .choice, .swatch {
+        border-radius: 1.5rem;
+        text-align: left;
+        background: var(--paper);
+      }
+      .choice {
+        width: 100%;
+        border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+        padding: 1rem;
+      }
+      .choice[aria-pressed="true"], .swatch[aria-pressed="true"] {
+        box-shadow: 0 0 0 2px var(--ink);
+      }
+      .choice[aria-pressed="true"] {
+        border-color: var(--ink);
+        background: color-mix(in srgb, var(--blush) 25%, transparent);
+      }
+      .swatch[aria-pressed="true"] { outline: 2px solid var(--paper); }
+      .row { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+      .serif { font-family: var(--serif); font-size: 1.125rem; line-height: 1.45; }
+      .swatch {
+        position: relative;
+        display: flex;
+        min-height: 9rem;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+        border: 0;
+        padding: 1rem;
+        color: var(--ink);
+      }
+      .swatch.pad0 { min-height: 0; justify-content: flex-start; padding: 0; border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent); }
+      .swatch .big { font-family: var(--serif); font-size: 1.5rem; line-height: 1.2; }
+      .swatch .small { margin-top: 0.25rem; font-size: 0.875rem; line-height: 1.35; }
+      .swatch img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+      .swatch .cap { display: block; padding: 0.75rem 0.75rem 0; font-family: var(--serif); font-size: 1rem; line-height: 1.35; }
+      .swatch .sub { display: block; padding: 0.25rem 0.75rem 0.75rem; font-size: 0.875rem; line-height: 1.35; color: var(--muted); }
+      .tick {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        display: flex;
+        width: 1.75rem;
+        height: 1.75rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .tick.inline { position: static; width: 1.25rem; height: 1.25rem; margin-top: 0.15rem; background: transparent; color: var(--ink); flex-shrink: 0; }
+      .white { background: var(--white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent); }
+      .blush { background: var(--case-blush); }
+      .peach { background: var(--peach); }
+      .clear {
+        background-color: color-mix(in srgb, var(--paper) 35%, white);
+        background-image:
+          linear-gradient(45deg, color-mix(in srgb, var(--ink) 8%, transparent) 25%, transparent 25%),
+          linear-gradient(-45deg, color-mix(in srgb, var(--ink) 8%, transparent) 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--ink) 8%, transparent) 75%),
+          linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--ink) 8%, transparent) 75%);
+        background-size: 16px 16px;
+        background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 18%, transparent);
+      }
+      .frame { margin-top: 1.5rem; border-radius: 1.5rem; padding: 0.75rem; }
+      .frame img { width: 100%; aspect-ratio: 1; border-radius: 1rem; object-fit: cover; display: block; }
+      .light { margin: 0.5rem 0 0; font-size: 1rem; color: var(--muted); }
+      .prose { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem; font-size: 1rem; }
+      .prose p { margin: 0; }
+      .archive { margin: 2rem 0 0; border-radius: 1.5rem; background: color-mix(in srgb, var(--ink) 5%, transparent); padding: 1rem 1.25rem; }
+      .archive dt { font-size: 0.875rem; color: var(--muted); }
+      .archive .title { margin: 0.25rem 0 0; font-family: var(--serif); font-size: 1.5rem; line-height: 1.35; }
+      .dotrow { margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+      .dot { width: 1rem; height: 1rem; border-radius: 999px; display: inline-block; flex-shrink: 0; }
+      .code { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--muted); }
+      .btn {
+        border: 0;
+        border-radius: 999px;
+        background: var(--ink);
+        color: var(--paper);
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        font-weight: 500;
+      }
+      .btn:disabled { opacity: 0.4; }
+      .btn.full { width: 100%; }
+      .btn.ghost { background: transparent; color: var(--ink); }
+      .btn.quiet { width: 100%; background: transparent; color: var(--muted); font-size: 0.875rem; font-weight: 400; padding: 0.75rem; }
+      .actions { display: flex; gap: 0.5rem; }
+      .grow { flex: 1; }
+      .note { margin: 0.5rem 0 0; text-align: center; font-size: 0.875rem; color: var(--muted); }
+      .fallback {
+        width: 100%;
+        margin-top: 0.5rem;
+        border-radius: 1rem;
+        border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+        background: var(--paper);
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--ink);
+      }
+      button:focus-visible, input:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
+      }
+      .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <main id="main"></main>
+      <footer id="footer"></footer>
+    </div>
+    <script>
+      const colors = [
+        { id: "white", name: "白色", poetic: "像還沒寫字的紙", blurb: "留白很多，乾淨，安靜，像一張還沒被寫滿的紙。", frame: "white", dot: "white" },
+        { id: "blush", name: "淺粉色", poetic: "像花瓣的內側", blurb: "粉得很輕，像被太陽曬過的花瓣內側。", frame: "blush", dot: "blush" },
+        { id: "peach", name: "桃紅色", poetic: "像熟透的水蜜桃", blurb: "暖，帶一點熟透的甜，像午後的水蜜桃。", frame: "peach", dot: "peach" },
+        { id: "clear", name: "透明", poetic: "像窗上的雨，什麼都不擋", blurb: "清楚，不遮，讓光直接穿過去。", frame: "clear", dot: "clear" },
+      ];
+      const styles = [
+        { id: "embroider", code: "01", name: "刺繡花花世界", hint: "一針一針，把花留住", image: "motifs/embroider.jpg", letter: "你願意花時間。一針是一朵花，一朵花是一次沒說出口的喜歡。看起來熱鬧的地方，其實每一處都是你親手留下的。" },
+        { id: "hug", code: "02", name: "抱得緊緊的", hint: "想被用力抱一下", image: "motifs/hug.jpg", letter: "你表達在乎的方式很身體。靠近、收緊、不找台詞。你記得誰今天比較安靜，也希望有人這樣記得你。" },
+        { id: "fly", code: "03", name: "愛上輕汽球", hint: "抓著汽球，往上", image: "motifs/fly.jpg", letter: "你心裡還留著一根線。不是不踏實，是你需要看見自己可以離開地面一下子。雲、氣球、一小段彩虹，都算數。" },
+        { id: "picnic", code: "04", name: "開心野餐日", hint: "格子布，跟可以分的快樂", image: "motifs/picnic.jpg", letter: "你的開心攤得開。一張格子布、一顆草莓、一個不必趕的午後。你是會先把位置留好的那種人。" },
+        { id: "sunny", code: "05", name: "向日葵好時光", hint: "臉朝著有光的地方", image: "motifs/sunny.jpg", letter: "你把臉轉向有光的地方，而且做得毫不費力。今天的你不需要把快樂解釋成別的東西。" },
+        { id: "doodle", code: "06", name: "塗鴉筆記本", hint: "邊角才是真心話", image: "motifs/doodle.jpg", letter: "你的真心話住在邊邊角角。沒寫完的句子、一顆愛心、幾顆小星星。太正式的格子會把你困住，草稿不會。" },
+        { id: "hi", code: "07", name: "親愛的小貓", hint: "一聲輕輕的靠近就夠了", image: "motifs/hi.jpg", letter: "你不靠很大的登場。一聲嗨，距離就短了。你的好很近，近到別人會以為這是隨便，其實你是認真的。" },
+        { id: "faces", code: "08", name: "小貓表情包", hint: "用一排小臉把話說完", image: "motifs/faces.jpg", letter: "你準備了很多種臉，好把說不順的話送出去。有的是笑，有的是裝傻，有的是真的開心。看懂的人，一眼就知道是哪一種。" },
+      ];
+      const keeps = [
+        { id: "pillow", title: "枕頭底下，等關燈才拿出來", echo: "你習慣把心情壓在枕頭底下，等燈滅了才肯看它一眼。" },
+        { id: "draft", title: "訊息框裡，打好了又刪掉", echo: "你常常把話打好，又在送出前刪掉。" },
+        { id: "pocket", title: "口袋裡，跟糖紙放在一起", echo: "你的心情跟糖紙一起待在口袋裡，走路的時候輕輕響。" },
+        { id: "smile", title: "心裡頭，讓人以為你沒事", echo: "你會把真心藏進心裡頭，讓別人以為你沒事。" },
+      ];
+      const hugs = [
+        { id: "stiff", title: "先僵一下，再慢慢放軟", echo: "被人突然抱住時，你會先僵一下，再慢慢把肩膀放下來。" },
+        { id: "tighter", title: "回抱得比對方更緊", echo: "被人抱住時，你回抱得比對方更緊。" },
+        { id: "laugh", title: "先笑出來，好像不太認真", echo: "被人抱住時，你會先笑出來，好像這樣就不會太認真。" },
+        { id: "glad", title: "心裡只想：還好有人在", echo: "被人抱住時，你心裡其實只是想：還好有人在。" },
+      ];
+      const wishes = [
+        { id: "day", title: "剛好出現在需要的那天", echo: "你希望好事剛好落在你需要的那天，不必聲張。" },
+        { id: "quiet", title: "安靜放在我會看見的地方", echo: "你希望好事安靜地放在你會看見的地方。" },
+        { id: "laugh", title: "讓我忍不住笑出聲", echo: "你希望那件小事能讓你忍不住笑出聲。" },
+        { id: "none", title: "什麼都不解釋，只是剛好", echo: "你希望對方什麼都不解釋，只是剛好。" },
+      ];
+      const order = ["keep", "color", "hug", "style", "wish"];
+      const copy = {
+        keep: { title: "最近，你比較常把心情收在哪裡？", hint: "選一個最接近的。沒有標準答案。" },
+        color: { title: "如果今天只准停在一種光裡？", hint: "選你願意待一整天的那種。" },
+        hug: { title: "有朋友突然抱你一下。第一反應是？", hint: "身體通常比嘴巴誠實。" },
+        style: { title: "最裡面那層抽屜，你想收起哪一幅？", hint: "選一幅你一看就想留下來的小畫。" },
+        wish: { title: "如果世界要悄悄留一件很小的好事，你希望它怎麼來？", hint: "最後一層了。" },
+      };
+
+      const main = document.getElementById("main");
+      const footer = document.getElementById("footer");
+      const state = { phase: "intro", qi: 0, name: "", keep: null, color: null, hug: null, style: null, wish: null, copied: false, fallback: null };
+
+      function sanitize(raw) {
+        return String(raw || "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 12);
+      }
+      function find(list, id) { return list.find((item) => item.id === id) || null; }
+      function echo(list, id, fallback) { return (find(list, id) || {}).echo || fallback; }
+      function resultFromQuery() {
+        const q = new URLSearchParams(location.search);
+        const color = find(colors, q.get("c"));
+        const style = find(styles, q.get("s"));
+        if (!color || !style) return null;
+        return { color, style, name: sanitize(q.get("n")), keep: q.get("a"), hug: q.get("b"), wish: q.get("d") };
+      }
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text != null) node.textContent = text;
+        return node;
+      }
+      function check(extra) {
+        const span = el("span", "tick" + (extra ? " " + extra : ""));
+        span.setAttribute("aria-hidden", "true");
+        span.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+        return span;
+      }
+      function button(label, className, onClick) {
+        const node = el("button", className, label);
+        node.type = "button";
+        node.addEventListener("click", onClick);
+        return node;
+      }
+
+      function render() {
+        const done = resultFromQuery();
+        main.replaceChildren();
+        footer.replaceChildren();
+        const view = el("div", "rise");
+        if (done) view.append(renderResult(done));
+        else if (state.phase === "intro") view.append(renderIntro());
+        else view.append(renderQuestion());
+        main.append(view);
+        main.scrollTop = 0;
+        if (done) renderResultFooter(done);
+        else renderQuizFooter();
+      }
+
+      function renderIntro() {
+        const form = el("form");
+        form.id = "intro-form";
+        form.append(el("p", "eyebrow center muted", "三分鐘 · 沒有對錯"));
+        form.append(el("h1", "display", "秘密抽屜"));
+        form.append(el("p", "lede", "有些心情不會說出口。打開五層抽屜，抽出今天想收起來的那一幅小畫。"));
+        const img = el("img", "cover");
+        img.src = "motifs/cover.jpg";
+        img.alt = "一隻白小貓坐在打開的木抽屜旁，抽屜裡有一封空白的信和幾朵乾燥花";
+        form.append(img);
+        const label = el("label", "ask", "這封信要怎麼稱呼你");
+        label.htmlFor = "nickname";
+        const input = el("input", "name");
+        input.id = "nickname";
+        input.maxLength = 12;
+        input.placeholder = "可以留白";
+        input.autocomplete = "nickname";
+        input.enterKeyHint = "done";
+        input.value = state.name;
+        input.addEventListener("input", () => { state.name = input.value; });
+        form.append(label, input);
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          state.name = sanitize(state.name);
+          state.phase = "quiz";
+          state.qi = 0;
+          render();
+        });
+        return form;
+      }
+
+      function renderQuestion() {
+        const key = order[state.qi];
+        const section = el("section");
+        const step = el("p", "eyebrow muted");
+        step.append(el("span", "sr", "第 " + (state.qi + 1) + " 題，共 5 題。"));
+        step.append(document.createTextNode("抽屜 " + (state.qi + 1) + " / 5"));
+        const bars = el("div", "bars");
+        bars.setAttribute("aria-hidden", "true");
+        order.forEach((_, index) => {
+          const klass = index < state.qi ? "bar done" : index === state.qi ? "bar now" : "bar";
+          bars.append(el("span", klass));
+        });
+        section.append(step, bars, el("h1", "question", copy[key].title), el("p", "hint", copy[key].hint));
+        const visual = key === "color" || key === "style";
+        const list = el("div", visual ? "grid" : "stack");
+        if (key === "color") colors.forEach((color) => list.append(swatch(color.name, color.poetic, null, color.frame, state.color === color.id, () => choose(color.id))));
+        else if (key === "style") styles.forEach((style) => list.append(picture(style, state.style === style.id, () => choose(style.id))));
+        else {
+          const options = key === "keep" ? keeps : key === "hug" ? hugs : wishes;
+          const current = state[key];
+          options.forEach((option) => list.append(textChoice(option, current === option.id, () => choose(option.id))));
+        }
+        section.append(list);
+        return section;
+      }
+
+      function textChoice(option, selected, onClick) {
+        const node = el("button", "choice");
+        node.type = "button";
+        node.setAttribute("aria-pressed", selected ? "true" : "false");
+        const row = el("span", "row");
+        row.append(el("span", "serif", option.title));
+        if (selected) row.append(check("inline"));
+        node.append(row);
+        node.addEventListener("click", onClick);
+        return node;
+      }
+
+      function swatch(title, poetic, image, frame, selected, onClick) {
+        const node = el("button", "swatch " + frame);
+        node.type = "button";
+        node.setAttribute("aria-pressed", selected ? "true" : "false");
+        node.append(el("span", "big", title), el("span", "small", poetic));
+        if (selected) node.append(check());
+        node.addEventListener("click", onClick);
+        return node;
+      }
+
+      function picture(style, selected, onClick) {
+        const node = el("button", "swatch pad0");
+        node.type = "button";
+        node.setAttribute("aria-pressed", selected ? "true" : "false");
+        const img = el("img");
+        img.src = style.image;
+        img.alt = "";
+        node.append(img, el("span", "cap", style.name), el("span", "sub", style.hint));
+        if (selected) node.append(check());
+        node.addEventListener("click", onClick);
+        return node;
+      }
+
+      function choose(id) {
+        state[order[state.qi]] = id;
+        render();
+      }
+
+      function renderResult(done) {
+        const article = el("article");
+        article.append(el("p", "eyebrow muted", "從抽屜裡抽出的信"));
+        article.append(el("p", "letter-name", (done.name ? done.name : "嘿") + "，"));
+        const frame = el("div", "frame " + done.color.frame);
+        const img = el("img");
+        img.src = done.style.image;
+        img.alt = done.style.name;
+        frame.append(img);
+        article.append(frame);
+        article.append(el("h1", "style-name", done.style.name));
+        article.append(el("p", "light", "光 · " + done.color.name));
+        const prose = el("div", "prose");
+        [
+          echo(keeps, done.keep, "你把一些話留在自己這裡。"),
+          echo(hugs, done.hug, "你跟人的距離，有時近，有時需要一點時間。"),
+          "你把光選成" + done.color.name + "。" + done.color.blurb,
+          done.style.letter,
+          echo(wishes, done.wish, "你希望好事發生的時候，剛剛好。"),
+          "這幅畫，就先替你收著。",
+        ].forEach((text) => prose.append(el("p", null, text)));
+        const archive = el("dl", "archive");
+        archive.append(el("dt", null, "抽屜檔案"));
+        archive.append(el("dd", "title", done.style.name));
+        const row = el("dd", "dotrow");
+        row.append(el("span", "dot " + done.color.dot), document.createTextNode(done.color.name));
+        archive.append(row, el("dd", "code", "No. " + done.style.code));
+        article.append(prose, archive);
+        return article;
+      }
+
+      function renderQuizFooter() {
+        const wrap = el("div", "actions");
+        if (state.phase === "quiz") {
+          wrap.append(button("上一層", "btn ghost", () => {
+            if (state.qi === 0) state.phase = "intro";
+            else state.qi -= 1;
+            render();
+          }));
+        }
+        const last = state.phase === "quiz" && state.qi === order.length - 1;
+        const label = state.phase === "intro" ? "打開抽屜" : last ? "抽出這封信" : "下一層抽屜";
+        const next = el("button", "btn grow", label);
+        next.type = "button";
+        if (state.phase === "intro") {
+          let started = false;
+          const start = () => {
+            if (started) return;
+            started = true;
+            const field = document.getElementById("nickname");
+            state.name = sanitize(field && "value" in field ? field.value : state.name);
+            state.phase = "quiz";
+            state.qi = 0;
+            render();
+          };
+          next.addEventListener("pointerdown", (event) => {
+            if (event.pointerType === "mouse") return;
+            event.preventDefault();
+            start();
+          });
+          next.addEventListener("click", start);
+        } else {
+          if (!state[order[state.qi]]) next.disabled = true;
+          next.addEventListener("click", () => advance(last));
+        }
+        wrap.append(next);
+        footer.append(wrap);
+      }
+
+      function advance(last) {
+        const key = order[state.qi];
+        if (!state[key]) return;
+        if (!last) {
+          state.qi += 1;
+          render();
+          return;
+        }
+        const params = new URLSearchParams();
+        params.set("c", state.color);
+        params.set("s", state.style);
+        if (sanitize(state.name)) params.set("n", sanitize(state.name));
+        if (state.keep) params.set("a", state.keep);
+        if (state.hug) params.set("b", state.hug);
+        if (state.wish) params.set("d", state.wish);
+        history.pushState({}, "", "?" + params.toString());
+        state.copied = false;
+        state.fallback = null;
+        render();
+      }
+
+      function renderResultFooter(done) {
+        const share = button(state.copied ? "已複製這封信" : "把這封信傳出去", "btn full", () => { void shareResult(done); });
+        footer.append(share);
+        if (state.fallback) {
+          const input = el("input", "fallback");
+          input.readOnly = true;
+          input.value = state.fallback;
+          input.setAttribute("aria-label", "這封信的連結");
+          input.addEventListener("focus", () => input.select());
+          footer.append(input);
+        } else {
+          footer.append(el("p", "note", state.copied ? "貼給想一起看的人就好。" : "傳給想一起看的人就好。"));
+        }
+        footer.append(button("再打開一次", "btn quiet", () => {
+          state.phase = "intro";
+          state.qi = 0;
+          state.name = "";
+          state.keep = state.color = state.hug = state.style = state.wish = null;
+          state.copied = false;
+          state.fallback = null;
+          history.pushState({}, "", location.pathname);
+          render();
+        }));
+      }
+
+      async function shareResult(done) {
+        const link = location.href;
+        const text = "秘密抽屜\n小畫：" + done.style.name + "\n光：" + done.color.name;
+        if (typeof navigator.share === "function") {
+          try {
+            await navigator.share({ title: "秘密抽屜", text, url: link });
+            return;
+          } catch (error) {
+            if (error && error.name === "AbortError") return;
+          }
+        }
+        try {
+          await navigator.clipboard.writeText(text + "\n" + link);
+          state.copied = true;
+          state.fallback = null;
+        } catch {
+          state.fallback = link;
+        }
+        render();
+      }
+
+      for (const style of styles) {
+        const img = new Image();
+        img.src = style.image;
+      }
+      window.addEventListener("popstate", render);
+      render();
+    </script>
+  </body>
+</html>
