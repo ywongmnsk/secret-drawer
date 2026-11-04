@@ -290,8 +290,16 @@
       }
       function find(list, id) { return list.find((item) => item.id === id) || null; }
       function echo(list, id, fallback) { return (find(list, id) || {}).echo || fallback; }
+      function onProxy() {
+        return location.hostname === "htmlpreview.github.io" || location.search.includes("github");
+      }
+      function quizQuery() {
+        const search = new URLSearchParams(location.search);
+        if (search.get("c") && search.get("s")) return search;
+        return new URLSearchParams(location.hash.replace(/^#/, ""));
+      }
       function resultFromQuery() {
-        const q = new URLSearchParams(location.search);
+        const q = quizQuery();
         const color = find(colors, q.get("c"));
         const style = find(styles, q.get("s"));
         if (!color || !style) return null;
@@ -511,7 +519,8 @@
         if (state.keep) params.set("a", state.keep);
         if (state.hug) params.set("b", state.hug);
         if (state.wish) params.set("d", state.wish);
-        history.pushState({}, "", "?" + params.toString());
+        if (onProxy()) history.pushState({}, "", location.pathname + location.search + "#" + params.toString());
+        else history.pushState({}, "", "?" + params.toString());
         state.copied = false;
         state.fallback = null;
         render();
@@ -537,7 +546,7 @@
           state.keep = state.color = state.hug = state.style = state.wish = null;
           state.copied = false;
           state.fallback = null;
-          history.pushState({}, "", location.pathname);
+          history.pushState({}, "", onProxy() ? location.pathname + location.search : location.pathname);
           render();
         }));
       }
